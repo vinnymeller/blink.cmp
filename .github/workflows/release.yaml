@@ -72,6 +72,14 @@ jobs:
           cargo build --release --target ${{ matrix.target }}
           mv "${{ matrix.artifact_name }}" "${{ matrix.target }}.dll"
 
+      - name: Install Nix
+        if: contains(matrix.os, 'ubuntu') || contains(matrix.os, 'macos')
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Build with Nix
+        if: contains(matrix.os, 'ubuntu') || contains(matrix.os, 'macos')
+        run: nix build .#blink-cmp
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
