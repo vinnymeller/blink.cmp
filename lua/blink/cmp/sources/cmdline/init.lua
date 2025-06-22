@@ -63,12 +63,22 @@ local function get_completions(pattern, type, completion_type)
     -- temporarily remove system32 folder from PATH to avoid performance issues.
     if completion_type == 'shellcmd' and (vim.fn.has('win32') or vim.fn.has('wsl')) then
       local orig_path = vim.env.PATH
-      local separator = vim.fn.has('win32') and ';' or ':'
-      local target = vim.fn.has('win32') and 'C:\\Windows\\System32' or '/mnt/c/Windows/System32'
-      vim.env.PATH = table.concat(
-        vim.tbl_filter(function(part) return part:lower() ~= target:lower() end, vim.split(orig_path, separator)),
-        separator
-      )
+      local separator
+      local windows_path_prefix
+      if vim.fn.has('win32') == 1 then
+        separator = ';'
+        windows_path_prefix = '^c:\\'
+      else
+        separator = ':'
+        windows_path_prefix = '^/mnt/c/'
+      end
+
+      local filtered_path_parts = vim.tbl_filter(function(part)
+        local lower_part = part:lower()
+        if lower_part:find(windows_path_prefix) then return false end
+        return true
+      end, vim.split(orig_path, separator))
+      vim.env.PATH = table.concat(filtered_path_parts, separator)
       local completions = vim.fn.getcompletion(pattern, type)
       vim.env.PATH = orig_path
       return completions
